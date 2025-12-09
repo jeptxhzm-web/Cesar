@@ -1,0 +1,106 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local BiliEvent = ReplicatedStorage:WaitForChild("BiliToolEvent")
+
+-- ===== SCREEN GUI =====
+local screen = Instance.new("ScreenGui")
+screen.Name = "AninoxMoneyGUI"
+screen.Parent = PlayerGui
+screen.ResetOnSpawn = false
+
+-- ===== MAIN FRAME =====
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 240, 0, 150)
+frame.Position = UDim2.new(0.5, -120, 0.5, -75)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.Parent = screen
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 15)
+frame.Active = true
+frame.Draggable = true
+
+-- ===== HEADER =====
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 40)
+header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+header.BorderSizePixel = 0
+header.Parent = frame
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 15)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -10, 1, 0)
+title.Position = UDim2.new(0, 5, 0, 0)
+title.Text = "Aninox Money"
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
+
+-- ===== TEXTBOX =====
+local amountBox = Instance.new("TextBox")
+amountBox.Size = UDim2.new(1, -60, 0, 30)
+amountBox.Position = UDim2.new(0, 30, 0, 55)
+amountBox.PlaceholderText = "Enter amount..."
+amountBox.Text = "" -- empty by default
+amountBox.Font = Enum.Font.Gotham
+amountBox.TextSize = 14
+amountBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+amountBox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+amountBox.BorderSizePixel = 0
+amountBox.Parent = frame
+Instance.new("UICorner", amountBox).CornerRadius = UDim.new(0, 8)
+
+-- ===== BUTTONS =====
+local function createButton(parent, text, position, size, color)
+    local btn = Instance.new("TextButton")
+    btn.Size = size
+    btn.Position = position
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Parent = parent
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    return btn
+end
+
+local plusButton = createButton(frame, "+MONEY", UDim2.new(0.05, 0, 0, 95), UDim2.new(0.4, 0, 0, 28), Color3.fromRGB(50, 150, 50))
+local minusButton = createButton(frame, "-MONEY", UDim2.new(0.55, 0, 0, 95), UDim2.new(0.4, 0, 0, 28), Color3.fromRGB(150, 50, 50))
+
+-- ===== FUNCTIONS =====
+local function spawnStone(amount)
+    local args = {"Stone", amount, "makii009ww1"}
+    BiliEvent:FireServer(unpack(args))
+end
+
+-- Automatically remove Stone from inventory
+local function removeStone(item)
+    if item.Name == "Stone" then
+        task.defer(function()
+            if item and item.Parent then
+                item:Destroy()
+            end
+        end)
+    end
+end
+
+Player.Backpack.ChildAdded:Connect(removeStone)
+Player.CharacterAdded:Connect(function(char)
+    char.ChildAdded:Connect(removeStone)
+end)
+
+-- ===== BUTTON ACTIONS =====
+plusButton.MouseButton1Click:Connect(function()
+    local amt = tonumber(amountBox.Text) or 1
+    spawnStone(-math.abs(amt)) -- always negative to add money
+end)
+
+minusButton.MouseButton1Click:Connect(function()
+    local amt = tonumber(amountBox.Text) or 1
+    spawnStone(math.abs(amt)) -- always positive to remove money
+end)
