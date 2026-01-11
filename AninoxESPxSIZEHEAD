@@ -1,0 +1,237 @@
+-- ✅ Silent ESP + Headsize Script
+-- Keys:
+-- E = Toggle ESP
+-- P = Toggle Head Size
+-- M = PERMANENTLY REMOVE SCRIPT (no re-enable)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+------------------------------------------------------------
+-- CONFIG
+------------------------------------------------------------
+local ESP_TOGGLE_KEY = Enum.KeyCode.E
+local HEAD_TOGGLE_KEY = Enum.KeyCode.P
+local DESTROY_KEY = Enum.KeyCode.M
+
+local HEAD_TARGET_SIZE = Vector3.new(3, 3, 3)
+local HEAD_TARGET_TRANSPARENCY = 0.2
+local HEAD_TARGET_CAN_COLLIDE = false
+
+------------------------------------------------------------
+-- STATE
+------------------------------------------------------------
+local espEnabled = true
+local headEnabled = false
+local destroyed = false
+
+local espData = {}
+local originalHeadProps = {}
+
+------------------------------------------------------------
+-- HEAD SIZE FUNCTIONS
+------------------------------------------------------------
+local function saveOriginal(head)
+	if not head or originalHeadProps[head] then return end
+	originalHeadProps[head] = {
+		Size = head.Size,
+		Transparency = head.Transparency,
+		CanCollide = head.CanCollide
+	}
+end
+
+local function applyHead(head)
+	if not head or not head:IsA("BasePart") then return end
+	saveOriginal(head)
+	head.Size = HEAD_TARGET_SIZE
+	head.Transparency = HEAD_TARGET_TRANSPARENCY
+	head.CanCollide = HEAD_TARGET_CAN_COLLIDE
+end
+
+local function restoreHead(head)
+	local props = originalHeadProps[head]
+	if not props then return end
+	pcall(function()
+		head.Size = props.Size
+		head.Transparency = props.Transparency
+		head.CanCollide = props.CanCollide
+	end)
+	originalHeadProps[head] = nil
+end
+
+local function processHead(character, enable)
+	local head = character:FindFirstChild("Head")
+	if not head then return end
+	if enable then
+		applyHead(head)
+	else
+		restoreHead(head)
+	end
+end
+
+local function applyHeadToAll()
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer and p.Character then
+			processHead(p.Character, headEnabled)
+		end
+	end
+end
+
+------------------------------------------------------------
+-- ESP FUNCTIONS
+------------------------------------------------------------
+local function removeESP(player)
+	local data = espData[player]
+	if not data then return end
+	if data.billboard then data.billboard:Destroy() end
+	if data.highlight then data.highlight:Destroy() end
+	espData[player] = nil
+end
+
+local function healthToColor(hp)
+	return Color3.new(1 - hp, hp, 0)
+end
+
+local function createESP(player, character)
+	if not character:FindFirstChild("Head") then return end
+	removeESP(player)
+
+	local head = character.Head
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Size = UDim2.new(0, 220, 0, 36)
+	billboard.StudsOffset = Vector3.new(0, 2.8, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Adornee = head
+	billboard.Parent = PlayerGui
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.TextStrokeTransparency = 0
+	label.Font = Enum.Font.SourceSansBold
+	label.TextSize = 20
+	label.Parent = billboard
+
+	local highlight = Instance.new("Highlight")
+	highlight.Adornee = character
+	highlight.FillTransparency = 0.7
+	highlight.OutlineTransparency = 0.2
+	highlight.Parent = character
+
+	espData[player] = {
+		billboard = billboard,
+		label = label,
+		highlight = highlight,
+		character = character
+	}
+end
+
+local function updateESP()
+	for player, data in pairs(espData) do
+		local char = data.character
+		local hum = char and char:FindFirstChild("Humanoid")
+		local head = char and char:FindFirstChild("Head")
+		if not (char and hum and head) then
+			removeESP(player)
+		else
+			local localHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
+			if not localHead then continue end
+
+			local hp = math.clamp(hum.Health, 0, hum.MaxHealth)
+			local hpPct = hum.MaxHealth > 0 and hp / hum.MaxHealth or 0
+			local dist = (localHead.Position - head.Position).Magnitude
+
+			data.label.Text = string.format(
+				"%s │ Health: %d │ Studs: %d",
+				player.Name,
+				math.floor(hp),
+				math.floor(dist)
+			)
+
+			local color = healthToColor(hpPct)
+			data.highlight.FillColor = color
+			data.highlight.OutlineColor = color
+			data.billboard.Enabled = espEnabled
+			data.highlight.Enabled = espEnabled
+		end
+	end
+end
+
+local function applyESPToAll()
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer and p.Character then
+			createESP(p, p.Character)
+		end
+	end
+end
+
+------------------------------------------------------------
+-- CONNECTIONS
+------------------------------------------------------------
+Players.PlayerAdded:Connect(function(p)
+	if p == LocalPlayer then return end
+	p.CharacterAdded:Connect(function(char)
+		task.wait(0.2)
+		if destroyed then return end
+		createESP(p, char)
+		processHead(char, headEnabled)
+	end)
+end)
+
+Players.PlayerRemoving:Connect(removeESP)
+
+local heartbeatConn
+heartbeatConn = RunService.Heartbeat:Connect(function()
+	if destroyed then return end
+	updateESP()
+end)
+
+------------------------------------------------------------
+-- INPUT
+------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp or destroyed then return end
+
+	if input.KeyCode == DESTROY_KEY then
+		destroyed = true
+
+		-- Remove ESP
+		for p in pairs(espData) do
+			removeESP(p)
+		end
+
+		-- Restore heads
+		for _, p in pairs(Players:GetPlayers()) do
+			if p.Character then
+				processHead(p.Character, false)
+			end
+		end
+
+		if heartbeatConn then
+			heartbeatConn:Disconnect()
+		end
+
+		script:Destroy()
+		return
+	end
+
+	if input.KeyCode == ESP_TOGGLE_KEY then
+		espEnabled = not espEnabled
+		applyESPToAll()
+
+	elseif input.KeyCode == HEAD_TOGGLE_KEY then
+		headEnabled = not headEnabled
+		applyHeadToAll()
+	end
+end)
+
+------------------------------------------------------------
+-- INIT
+------------------------------------------------------------
+applyESPToAll()
