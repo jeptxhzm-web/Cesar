@@ -1,0 +1,41 @@
+local Aimbot = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/Exunys/Aimbot-V3/main/src/Aimbot.lua"
+))()
+Aimbot.Load()
+
+-- Services
+local UserInputService = game:GetService("UserInputService")
+
+-- States
+local enabled = true
+local destroyed = false
+
+-- Input Connection
+local inputConnection
+inputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or destroyed then return end
+
+    -- Toggle Aimbot (P)
+    if input.KeyCode == Enum.KeyCode.P then
+        enabled = not enabled
+        if Aimbot and Aimbot.Settings then
+            Aimbot.Settings.Enabled = enabled
+        end
+    end
+
+    -- Destroy Script (M)
+    if input.KeyCode == Enum.KeyCode.M then
+        destroyed = true
+
+        if Aimbot and Aimbot.Settings then
+            Aimbot.Settings.Enabled = false
+            Aimbot.Settings.ShowFOV = false
+        end
+
+        if inputConnection then
+            inputConnection:Disconnect()
+        end
+
+        Aimbot = nil
+    end
+end)
