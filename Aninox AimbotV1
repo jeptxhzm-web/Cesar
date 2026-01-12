@@ -1,77 +1,59 @@
-------------------------------------------------------------
--- SERVICES
-------------------------------------------------------------
+-- Load aimbot ONCE
+local Aimbot = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/Exunys/Aimbot-V3/main/src/Aimbot.lua"
+))()
+Aimbot.Load()
+
+-- Services
 local UserInputService = game:GetService("UserInputService")
 
-------------------------------------------------------------
--- STATE
-------------------------------------------------------------
-local Aimbot
-local enabled = false
-local destroyed = false
-local inputConnection
+-- States
+local enabled = true       -- P key toggle
+local disabled = false     -- Full M+L toggle
+local mDown = false
+local lDown = false
+local comboCooldown = false
 
-------------------------------------------------------------
--- LOAD
-------------------------------------------------------------
-local function loadAimbot()
-	if Aimbot then return end
-
-	local ok, lib = pcall(function()
-		return loadstring(game:HttpGet(
-			"https://raw.githubusercontent.com/Exunys/Aimbot-V3/main/src/Aimbot.lua"
-		))()
-	end)
-
-	if ok and lib then
-		Aimbot = lib
-		Aimbot.Load()
-		if Aimbot.Settings then
-			Aimbot.Settings.Enabled = enabled
-		end
-	end
+-- Update aimbot state
+local function UpdateAimbot()
+    if Aimbot.Settings then
+        Aimbot.Settings.Enabled = enabled and not disabled
+        Aimbot.Settings.ShowFOV = enabled and not disabled
+    end
 end
 
-------------------------------------------------------------
--- UNLOAD (PANIC)
-------------------------------------------------------------
-local function unloadAimbot()
-	if not Aimbot then return end
-
-	if Aimbot.Settings then
-		Aimbot.Settings.Enabled = false
-		Aimbot.Settings.ShowFOV = false
-	end
-
-	Aimbot = nil
-	destroyed = true
+-- Toggle full ON/OFF
+local function ToggleFull()
+    disabled = not disabled
+    UpdateAimbot()
 end
 
-------------------------------------------------------------
--- INPUT
-------------------------------------------------------------
-inputConnection = UserInputService.InputBegan:Connect(function(input, gp)
-	if gp then return end
+-- Input handlers
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
 
-	-- Toggle Aimbot
-	if input.KeyCode == Enum.KeyCode.P then
-		if destroyed then return end
-		enabled = not enabled
-		if not Aimbot then loadAimbot() end
-		if Aimbot and Aimbot.Settings then
-			Aimbot.Settings.Enabled = enabled
-		end
-	end
+    -- Track key presses
+    if input.KeyCode == Enum.KeyCode.M then
+        mDown = true
+    elseif input.KeyCode == Enum.KeyCode.L then
+        lDown = true
+    elseif input.KeyCode == Enum.KeyCode.P then
+        enabled = not enabled
+        UpdateAimbot()
+    end
 
-	-- Panic Disable (re-execute to restore)
-	if input.KeyCode == Enum.KeyCode.M then
-		unloadAimbot()
-	end
+    -- Check combo
+    if mDown and lDown and not comboCooldown then
+        comboCooldown = true
+        ToggleFull()
+        task.delay(0.3, function() comboCooldown = false end)
+    end
 end)
 
-------------------------------------------------------------
--- SILENCE OUTPUT
-------------------------------------------------------------
-print = function() end
-warn  = function() end
-error = function() end
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.M then
+        mDown = false
+    elseif input.KeyCode == Enum.KeyCode.L then
+        lDown = false
+    end
+end)
