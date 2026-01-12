@@ -1,8 +1,8 @@
--- ✅ Silent ESP + Headsize Script
+-- ✅ Silent ESP + Headsize (Optimized for Heavy Servers)
 -- Keys:
 -- E = Toggle ESP
 -- P = Toggle Head Size
--- M = PERMANENTLY REMOVE SCRIPT (no re-enable)
+-- M + L = Toggle SCRIPT ON / OFF
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -11,32 +11,31 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-------------------------------------------------------------
 -- CONFIG
-------------------------------------------------------------
 local ESP_TOGGLE_KEY = Enum.KeyCode.E
 local HEAD_TOGGLE_KEY = Enum.KeyCode.P
-local DESTROY_KEY = Enum.KeyCode.M
+local TOGGLE_KEY_1 = Enum.KeyCode.M
+local TOGGLE_KEY_2 = Enum.KeyCode.L
 
-local HEAD_TARGET_SIZE = Vector3.new(3, 3, 3)
+local HEAD_TARGET_SIZE = Vector3.new(3,3,3)
 local HEAD_TARGET_TRANSPARENCY = 0.2
 local HEAD_TARGET_CAN_COLLIDE = false
 
-------------------------------------------------------------
+local UPDATE_INTERVAL = 0.15 -- seconds
+
 -- STATE
-------------------------------------------------------------
+local ScriptEnabled = true
 local espEnabled = true
 local headEnabled = false
-local destroyed = false
 
 local espData = {}
 local originalHeadProps = {}
+local heldKeys = {}
+local lastUpdate = 0
 
-------------------------------------------------------------
--- HEAD SIZE FUNCTIONS
-------------------------------------------------------------
+-- HEAD FUNCTIONS
 local function saveOriginal(head)
-	if not head or originalHeadProps[head] then return end
+	if originalHeadProps[head] then return end
 	originalHeadProps[head] = {
 		Size = head.Size,
 		Transparency = head.Transparency,
@@ -66,7 +65,7 @@ end
 local function processHead(character, enable)
 	local head = character:FindFirstChild("Head")
 	if not head then return end
-	if enable then
+	if enable and ScriptEnabled then
 		applyHead(head)
 	else
 		restoreHead(head)
@@ -74,16 +73,14 @@ local function processHead(character, enable)
 end
 
 local function applyHeadToAll()
-	for _, p in pairs(Players:GetPlayers()) do
+	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= LocalPlayer and p.Character then
 			processHead(p.Character, headEnabled)
 		end
 	end
 end
 
-------------------------------------------------------------
 -- ESP FUNCTIONS
-------------------------------------------------------------
 local function removeESP(player)
 	local data = espData[player]
 	if not data then return end
@@ -97,22 +94,24 @@ local function healthToColor(hp)
 end
 
 local function createESP(player, character)
+	if not ScriptEnabled or not espEnabled then return end
 	if not character:FindFirstChild("Head") then return end
 	removeESP(player)
 
 	local head = character.Head
 
 	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.new(0, 220, 0, 36)
-	billboard.StudsOffset = Vector3.new(0, 2.8, 0)
+	billboard.Size = UDim2.new(0,220,0,36)
+	billboard.StudsOffset = Vector3.new(0,2.8,0)
 	billboard.AlwaysOnTop = true
 	billboard.Adornee = head
 	billboard.Parent = PlayerGui
+	billboard.Enabled = true
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 1, 0)
+	label.Size = UDim2.new(1,0,1,0)
 	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1, 1, 1)
+	label.TextColor3 = Color3.new(1,1,1)
 	label.TextStrokeTransparency = 0
 	label.Font = Enum.Font.SourceSansBold
 	label.TextSize = 20
@@ -123,62 +122,69 @@ local function createESP(player, character)
 	highlight.FillTransparency = 0.7
 	highlight.OutlineTransparency = 0.2
 	highlight.Parent = character
+	highlight.Enabled = true
 
 	espData[player] = {
 		billboard = billboard,
 		label = label,
 		highlight = highlight,
-		character = character
+		character = character,
+		lastHP = -1,
+		lastDist = -1
 	}
 end
 
-local function updateESP()
+local function updateESP(delta)
+	if not ScriptEnabled or not espEnabled then return end
+	lastUpdate += delta
+	if lastUpdate < UPDATE_INTERVAL then return end
+	lastUpdate = 0
+
+	local localHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
+	if not localHead then return end
+
 	for player, data in pairs(espData) do
 		local char = data.character
-		local hum = char and char:FindFirstChild("Humanoid")
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
 		local head = char and char:FindFirstChild("Head")
 		if not (char and hum and head) then
 			removeESP(player)
 		else
-			local localHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
-			if not localHead then continue end
-
-			local hp = math.clamp(hum.Health, 0, hum.MaxHealth)
+			local hp = math.clamp(hum.Health,0,hum.MaxHealth)
 			local hpPct = hum.MaxHealth > 0 and hp / hum.MaxHealth or 0
 			local dist = (localHead.Position - head.Position).Magnitude
 
-			data.label.Text = string.format(
-				"%s │ Health: %d │ Studs: %d",
-				player.Name,
-				math.floor(hp),
-				math.floor(dist)
-			)
-
-			local color = healthToColor(hpPct)
-			data.highlight.FillColor = color
-			data.highlight.OutlineColor = color
-			data.billboard.Enabled = espEnabled
-			data.highlight.Enabled = espEnabled
+			if math.floor(hp) ~= data.lastHP or math.floor(dist) ~= data.lastDist then
+				data.label.Text = string.format(
+					"%s │ HP: %d │ Studs: %d",
+					player.Name,
+					math.floor(hp),
+					math.floor(dist)
+				)
+				local color = healthToColor(hpPct)
+				data.highlight.FillColor = color
+				data.highlight.OutlineColor = color
+				data.lastHP = math.floor(hp)
+				data.lastDist = math.floor(dist)
+			end
 		end
 	end
 end
 
 local function applyESPToAll()
-	for _, p in pairs(Players:GetPlayers()) do
+	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= LocalPlayer and p.Character then
 			createESP(p, p.Character)
 		end
 	end
 end
 
-------------------------------------------------------------
 -- CONNECTIONS
-------------------------------------------------------------
 Players.PlayerAdded:Connect(function(p)
 	if p == LocalPlayer then return end
 	p.CharacterAdded:Connect(function(char)
 		task.wait(0.2)
-		if destroyed then return end
+		if not ScriptEnabled then return end
 		createESP(p, char)
 		processHead(char, headEnabled)
 	end)
@@ -186,52 +192,46 @@ end)
 
 Players.PlayerRemoving:Connect(removeESP)
 
-local heartbeatConn
-heartbeatConn = RunService.Heartbeat:Connect(function()
-	if destroyed then return end
-	updateESP()
-end)
+RunService.Heartbeat:Connect(updateESP)
 
-------------------------------------------------------------
--- INPUT
-------------------------------------------------------------
+-- INPUT HANDLING
 UserInputService.InputBegan:Connect(function(input, gp)
-	if gp or destroyed then return end
+	if gp then return end
+	heldKeys[input.KeyCode] = true
 
-	if input.KeyCode == DESTROY_KEY then
-		destroyed = true
-
-		-- Remove ESP
-		for p in pairs(espData) do
-			removeESP(p)
+	-- SCRIPT TOGGLE
+	if heldKeys[TOGGLE_KEY_1] and heldKeys[TOGGLE_KEY_2] then
+		ScriptEnabled = not ScriptEnabled
+		if not ScriptEnabled then
+			for p in pairs(espData) do removeESP(p) end
+			applyHeadToAll()
+		else
+			applyESPToAll()
+			applyHeadToAll()
 		end
-
-		-- Restore heads
-		for _, p in pairs(Players:GetPlayers()) do
-			if p.Character then
-				processHead(p.Character, false)
-			end
-		end
-
-		if heartbeatConn then
-			heartbeatConn:Disconnect()
-		end
-
-		script:Destroy()
-		return
 	end
 
+	-- ESP TOGGLE
 	if input.KeyCode == ESP_TOGGLE_KEY then
 		espEnabled = not espEnabled
-		applyESPToAll()
+		if not espEnabled then
+			for p in pairs(espData) do removeESP(p) end
+		else
+			applyESPToAll()
+		end
+	end
 
-	elseif input.KeyCode == HEAD_TOGGLE_KEY then
+	-- HEAD TOGGLE
+	if input.KeyCode == HEAD_TOGGLE_KEY then
 		headEnabled = not headEnabled
 		applyHeadToAll()
 	end
 end)
 
-------------------------------------------------------------
+UserInputService.InputEnded:Connect(function(input)
+	heldKeys[input.KeyCode] = nil
+end)
+
 -- INIT
-------------------------------------------------------------
 applyESPToAll()
+applyHeadToAll()
