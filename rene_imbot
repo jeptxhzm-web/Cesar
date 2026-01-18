@@ -1,0 +1,152 @@
+-- ✅ PC Third-Person Aim Assist (Rivals Mobile Style) - ESP Removed
+-- Keys:
+-- E = Toggle Aim Assist
+-- M + L = Toggle SCRIPT ON / OFF (NO DESTROY)
+
+------------------------------------------------------------
+-- SERVICES
+------------------------------------------------------------
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+------------------------------------------------------------
+-- CORE
+------------------------------------------------------------
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+------------------------------------------------------------
+-- SETTINGS
+------------------------------------------------------------
+local ScriptEnabled = true
+local AimEnabled = false
+
+local Smoothness = 0.07   -- soft PC assist
+local MaxFOV = 35         -- assist bubble radius (pixels)
+
+local AIM_KEY = Enum.KeyCode.E
+local TOGGLE_KEY_1 = Enum.KeyCode.M
+local TOGGLE_KEY_2 = Enum.KeyCode.L
+
+------------------------------------------------------------
+-- STATE
+------------------------------------------------------------
+local activePlayers = {}
+local heldKeys = {}
+
+------------------------------------------------------------
+-- AIM ASSIST TARGETING
+------------------------------------------------------------
+local rayParams = RaycastParams.new()
+rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+rayParams.IgnoreWater = true
+
+local function getClosestTarget()
+	local shortest = MaxFOV
+	local closest = nil
+	local camPos = Camera.CFrame.Position
+	local mouseX, mouseY = Mouse.X, Mouse.Y
+
+	if LocalPlayer.Character then
+		rayParams.FilterDescendantsInstances = { LocalPlayer.Character }
+	end
+
+	for _, player in ipairs(activePlayers) do
+		local char = player.Character
+		if char then
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			local head = char:FindFirstChild("Head")
+			if hum and hum.Health > 0 and head then
+				local screenPos, onScreen = Camera:WorldToScreenPoint(head.Position)
+				if onScreen then
+					local dx = mouseX - screenPos.X
+					local dy = mouseY - screenPos.Y
+					local dist = math.sqrt(dx*dx + dy*dy)
+					if dist < shortest then
+						local hit = workspace:Raycast(camPos, head.Position - camPos, rayParams)
+						if not hit or hit.Instance:IsDescendantOf(char) then
+							shortest = dist
+							closest = head
+						end
+					end
+				end
+			end
+		end
+	end
+	return closest
+end
+
+------------------------------------------------------------
+-- PLAYER CONNECTIONS
+------------------------------------------------------------
+local function rebuildActivePlayers()
+	activePlayers = {}
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer then
+			table.insert(activePlayers, p)
+		end
+	end
+end
+
+rebuildActivePlayers()
+Players.PlayerAdded:Connect(function(player)
+	rebuildActivePlayers()
+end)
+Players.PlayerRemoving:Connect(function(player)
+	rebuildActivePlayers()
+end)
+
+------------------------------------------------------------
+-- AIM ASSIST LOOP (THIRD-PERSON PC)
+------------------------------------------------------------
+RunService.RenderStepped:Connect(function(dt)
+	if not ScriptEnabled or not AimEnabled then return end
+
+	local target = getClosestTarget()
+	if not target then return end
+
+	local camCF = Camera.CFrame
+	local camPos = camCF.Position
+
+	local targetDir = (target.Position - camPos).Unit
+	local currentDir = camCF.LookVector
+
+	local dot = math.clamp(currentDir:Dot(targetDir), -1, 1)
+	local angle = math.deg(math.acos(dot))
+
+	if angle > MaxFOV then return end -- only assist if already close
+
+	local assist = math.clamp(Smoothness * dt * 60, 0, 0.03)
+	local newDir = currentDir:Lerp(targetDir, assist)
+
+	Camera.CFrame = CFrame.new(camPos, camPos + newDir)
+end)
+
+------------------------------------------------------------
+-- INPUT
+------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	heldKeys[input.KeyCode] = true
+
+	if heldKeys[TOGGLE_KEY_1] and heldKeys[TOGGLE_KEY_2] then
+		ScriptEnabled = not ScriptEnabled
+	end
+
+	if input.KeyCode == AIM_KEY then
+		AimEnabled = not AimEnabled
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	heldKeys[input.KeyCode] = nil
+end)
+
+------------------------------------------------------------
+-- SILENCE OUTPUT
+------------------------------------------------------------
+print = function() end
+warn = function() end
+error = function() end
