@@ -23,8 +23,8 @@ local Mouse = LocalPlayer:GetMouse()
 local ScriptEnabled = true
 local AimEnabled = false
 
-local Smoothness = 0.2   -- soft PC assist
-local MaxFOV = 35         -- assist bubble radius (pixels)
+local Smoothness = 0.4   -- soft PC assist
+local MaxFOV = 40         -- assist bubble radius (pixels)
 
 local AIM_KEY = Enum.KeyCode.E
 local TOGGLE_KEY_1 = Enum.KeyCode.M
